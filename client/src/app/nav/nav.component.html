@@ -23,6 +23,7 @@
 
     @if (accountService.currentUser()) {
       <div class="dropdown" dropdown>
+        <img class="me-2" src="{{accountService.currentUser()?.photoUrl}}" alt="User main image">
         <a class="dropdown-toggle text-light text-decoration-none" dropdownToggle>
           Welcome {{accountService.currentUser()?.username | titlecase}}
         </a>
