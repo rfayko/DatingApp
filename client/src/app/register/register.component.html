@@ -21,10 +21,10 @@
     [formControl]="$any(registerForm.controls['knownAs'])"
     [label]="'Known As'">
   </app-text-input>
-  <app-text-input 
+  <app-date-picker 
     [formControl]="$any(registerForm.controls['dateOfBirth'])"
-    [label]="'DOB'">
-  </app-text-input>
+    [label]="'Date Of Birth'" [maxDate]="maxDate">
+  </app-date-picker>
   <app-text-input 
     [formControl]="$any(registerForm.controls['city'])"
     [label]="'City'">
@@ -34,24 +34,29 @@
     [label]="'Country'">
   </app-text-input>
 
-  <div class="mb-3 form-floating">
-    <input 
-      [class.is-invalid]="registerForm.get('confirmPassword')?.errors 
-        && registerForm.get('confirmPassword')?.touched"
-      type="password"
-      class="form-control"
-      formControlName="confirmPassword"
-      placeholder="Confirm Password"
-    >
-    <label>Conirm Password</label>
-    <div *ngIf="registerForm.get('confirmPassword')?.hasError('required')" class="invalid-feedback text-start">Please confirm your password.</div>
-    <div *ngIf="registerForm.get('confirmPassword')?.hasError('isMatching')" class="invalid-feedback text-start">Passwords do not match.</div>
-  </div>
+  <app-text-input 
+    [formControl]="$any(registerForm.controls['password'])"
+    [label]="'Password'"
+    [type]="'password'">
+  </app-text-input>
+  <app-text-input 
+    [formControl]="$any(registerForm.controls['confirmPassword'])"
+    [label]="'Confirm Password'"
+    [type]="'password'">
+  </app-text-input>
+
+  <!-- Validation Errors -->
+   @if (validationErrors) {
+    <div class="alert alert-danger text-start">
+      <ul>
+        @for (error of validationErrors; track $index) {
+          <li>{{error}}</li>
+        }
+      </ul>
+    </div>
+   }
 
   <div class="form-group text center">
-    <button class="btn btn-success me-2" type="submit">Register</button>
+    <button [disabled]="!registerForm.valid" class="btn btn-success me-2" type="submit">Register</button>
     <button (click)="cancel()" class="btn btn-default me-2" type="button">Cancel</button>  </div>
 </form>
-
-<p>Form value: {{registerForm.value | json}}</p>
-<p>Form value: {{registerForm.status | json}}</p>
