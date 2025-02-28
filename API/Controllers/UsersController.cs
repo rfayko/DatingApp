@@ -26,7 +26,7 @@ public class UsersController(IUserRepository userRepo, IMapper mapper, IPhotoSer
     }
 
     [HttpGet("{id:int}")] // /api/users/[id]
-    public async Task<ActionResult<AppUser>> GetUsersById(int id)
+    public async Task<ActionResult<AppUser>> GetUserById(int id)
     {
         var user = await userRepo.GetUserByIdAsync(id);
 

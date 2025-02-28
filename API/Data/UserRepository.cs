@@ -33,18 +33,21 @@ public class UserRepository(DataContext context, IMapper mapper) : IUserReposito
 
         query = query.Where(u => u.DateOfBirth >= minDoB && u.DateOfBirth <= maxDoB);
 
+        query = userParams.OrderBy switch 
+        {
+            "created" => query.OrderByDescending(q => q.Created),
+            _ => query.OrderByDescending(q => q.LastActive)
+        };
+
         return await PagedList<MemberDto>.CreateAsync(
             query.ProjectTo<MemberDto>(mapper.ConfigurationProvider), 
             userParams.PageNumber, 
             userParams.PageSize);
-  
     }
 
     public async Task<AppUser?> GetUserByIdAsync(int id)
     {
-        return await context.Users
-          .Include(u => u.Photos)
-          .SingleOrDefaultAsync(u => u.Id == id);
+        return await context.Users.FindAsync(id);
     }
 
     public async Task<AppUser?> GetUserByUsernameAsync(string username)

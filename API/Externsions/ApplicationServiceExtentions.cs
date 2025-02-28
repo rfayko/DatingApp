@@ -17,9 +17,12 @@ public static class ApplicationServiceExtentions
             opt.UseSqlite(config.GetConnectionString("DefaultConnection"));
         });
         services.AddCors();
+        
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPhotoService, PhotoService>();
+        services.AddScoped<LogUserActivity>();
+
         services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         services.Configure<CloudinarySettings>(config.GetSection("CloudinarySettings"));
 

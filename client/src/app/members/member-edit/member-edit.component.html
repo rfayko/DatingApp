@@ -35,11 +35,11 @@
           </div>
           <div>
             <strong>Last Active:</strong>
-            <p>{{ member.lastActive | date}}</p>
+            <p>{{ member.lastActive | timeago}}</p>
           </div>
           <div>
             <strong>Member Since:</strong>
-            <p>{{ member.created | date}}</p>
+            <p>{{ member.created | date: 'dd MMM YYYY'}}</p>
           </div>
         </div>
         <div class="card-footer">
