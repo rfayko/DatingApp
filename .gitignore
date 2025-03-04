@@ -482,7 +482,11 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+//App files
 API/appsettings.json
+API/dating.db-shm
+API/dating.db-wal
 
 #Angular
 client/.angular
