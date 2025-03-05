@@ -22,7 +22,8 @@ public static class ApplicationServiceExtentions
         
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ILikesRepository, LikesRepository>();
-        
+        services.AddScoped<IMessageRepository, MessageRepository>();
+
         services.AddScoped<IPhotoService, PhotoService>();
         services.AddScoped<LogUserActivity>();
 
