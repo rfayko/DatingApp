@@ -5,10 +5,12 @@ using API.Externsions;
 using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
+[Authorize]
 public class MessagesController(IMessageRepository messageRepo, IUserRepository userRepo, IMapper mapper) : BaseApiController
 {
   [HttpPost]
@@ -57,5 +59,30 @@ public class MessagesController(IMessageRepository messageRepo, IUserRepository 
     var currentUserName = User.GetUserName();
     return Ok(await messageRepo.GetMessageThread(currentUserName, username));
   }
+
+  [HttpDelete("{id:int}")]
+  public async Task<ActionResult> DeleteMessage(int id)
+  {
+    var currentUserName = User.GetUserName();
+    var msg = await messageRepo.GetMessage(id);
+    if(msg == null) return BadRequest("Could not mark message for deletion.");
+
+    if(msg.SenderUserName != currentUserName || msg.RecipientUserName != currentUserName) Forbid();
+
+    if (msg.SenderUserName == currentUserName) msg.SenderDeleted = true;
+    if (msg.RecipientUserName == currentUserName) msg.RecipientDeleted = true;
+
+    if (msg is {SenderDeleted: true, RecipientDeleted: true})
+    {
+      messageRepo.DeleteMessage(msg);
+    }
+
+    if (await messageRepo.SaveAllAsync()) 
+    {
+      return Ok();
+    }
+
+    return BadRequest("Problem deleting message");
+  } 
 
 }

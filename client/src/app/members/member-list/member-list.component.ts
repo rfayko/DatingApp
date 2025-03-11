@@ -3,10 +3,7 @@ import { MembersService } from '../../_services/members.service';
 import { MemberCardComponent } from "../member-card/member-card.component";
 import { PageChangedEvent, PaginationModule } from 'ngx-bootstrap/pagination';
 import { ButtonsModule } from 'ngx-bootstrap/buttons';
-import { AccountService } from '../../_services/account.service';
-import { UserParams } from '../../_models/userParams';
 import { FormsModule } from '@angular/forms';
-import { User } from '../../_models/user';
 
 @Component({
   selector: 'app-member-list',

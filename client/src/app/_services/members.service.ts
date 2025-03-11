@@ -41,7 +41,7 @@ export class MembersService {
       .append('orderBy', this.userParams().orderBy);
 
     //Process the Http response 
-    return this.http.get<Member[]>(this.baseUrl + "users", {observe: 'response', params}).subscribe({
+    return this.http.get<Member[]>(`${this.baseUrl}users`, {observe: 'response', params}).subscribe({
       next: response => {
         setPaginatedResponse(response, this.paginatedResult);
         this.memberCache.set(Object.values(this.userParams()).join('-'), response);
