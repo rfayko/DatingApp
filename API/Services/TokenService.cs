@@ -13,6 +13,8 @@ public class TokenService(IConfiguration config) : ITokenService
 {
     public string CreateToken(AppUser user)
     {
+        if (user == null || user.UserName == null) throw new Exception("User can't be null");
+        
         var tokenKey = config["TokenKey"] ?? throw new Exception("Cannot access token key from appsettings.");
 
         if( tokenKey.Length < 64) throw new Exception("Token key requires a minimum of 64 characters.");
