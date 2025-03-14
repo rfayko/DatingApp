@@ -27,13 +27,16 @@ public class AccountController(
 
         var result = await userManager.CreateAsync(user, registerDto.Password);
         if (!result.Succeeded) return BadRequest(result.Errors);
+        
+        await userManager.AddToRolesAsync(user, ["Member"]);
 
         return new UserDto
         {
             Username = user.UserName,
+            Token = await tokenService.CreateToken(user),
             KnownAs = user.KnownAs,
-            Gender = user.Gender,
-            Token = tokenService.CreateToken(user)
+            Gender = user.Gender
+
         };        
     }
     
@@ -46,14 +49,14 @@ public class AccountController(
         
         if (user == null || user.UserName == null) return Unauthorized("Invalid Username");
 
-        if(await userManager.CheckPasswordAsync(user, loginDto.Password)) return Unauthorized();
+        if(!await userManager.CheckPasswordAsync(user, loginDto.Password)) return Unauthorized();
 
         return new UserDto
         {
             Username = user.UserName,
             KnownAs = user.KnownAs,
             Gender = user.Gender,
-            Token = tokenService.CreateToken(user),
+            Token = await tokenService.CreateToken(user),
             PhotoUrl = user.Photos.FirstOrDefault(p => p.IsMain)?.Url
         };
     }
