@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { User } from '../_models/user';
 import { map } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -13,6 +13,14 @@ export class AccountService {
   private http = inject(HttpClient);
   baseUrl = environment.apiUrl;
   currentUser = signal<User | null>(null);
+  roles = computed(() => {
+    const user = this.currentUser();
+    if (user && user.token) {
+      const role = JSON.parse(atob(user.token.split('.')[1])).role;   //This pulls the role attribute from the JWT which is an roles array
+      return Array.isArray(role) ? role : [role];                     // role can be single string or array, force to array
+    }
+    return [];
+  })
 
   login(model: any) {
     return this.http.post<User>(this.baseUrl + "account/login", model).pipe(
