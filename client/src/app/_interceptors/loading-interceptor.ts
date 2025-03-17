@@ -8,6 +8,7 @@ export const loadingInterceptor: HttpInterceptorFn = (req, next) => {
   const busyService = inject(BusyService);
   busyService.busy();
 
+  //The delay is just for showing it works. Remove from PROD
   return next(req).pipe(
     delay(1000),
     finalize(() => {

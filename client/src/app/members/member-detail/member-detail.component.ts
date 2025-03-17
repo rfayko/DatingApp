@@ -1,5 +1,4 @@
-import { Component, inject, OnInit, ViewChild } from '@angular/core';
-import { MembersService } from '../../_services/members.service';
+import { Component, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Member } from '../../_models/member';
 import { TabDirective, TabsetComponent, TabsModule } from 'ngx-bootstrap/tabs';
@@ -9,6 +8,8 @@ import { DatePipe } from '@angular/common';
 import { MemberMessagesComponent } from "../member-messages/member-messages.component";
 import { Message } from '../../_models/message';
 import { MessageService } from '../../_services/message.service';
+import { PresenceService } from '../../_services/presence.service';
+import { AccountService } from '../../_services/account.service';
 
 @Component({
   selector: 'app-member-detail',
@@ -17,15 +18,15 @@ import { MessageService } from '../../_services/message.service';
   templateUrl: './member-detail.component.html',
   styleUrl: './member-detail.component.css'
 })
-export class MemberDetailComponent implements OnInit {
+export class MemberDetailComponent implements OnInit, OnDestroy {
   @ViewChild('memberTabs', {static: true}) memberTabs?: TabsetComponent;
+  accountService = inject(AccountService);
   private messageService = inject(MessageService);
-  private memberService = inject (MembersService);
+  presenceService = inject (PresenceService);
   route = inject(ActivatedRoute);
   member = {} as Member;            // This establishes member variable as non-nullable, will be populated by resolver.
   images: GalleryItem[] = []
   activeTab?: TabDirective
-  messages: Message[] = [];
 
   ngOnInit(): void {
     this.route.data.subscribe({
@@ -44,6 +45,10 @@ export class MemberDetailComponent implements OnInit {
     })
   }
 
+  ngOnDestroy(): void {
+    this.messageService.stopHubConnection();
+  }
+
   selectTab(heading: string) {
     if (this.memberTabs) {
       const messageTab = this.memberTabs.tabs.find(x => x.heading === heading);
@@ -53,20 +58,24 @@ export class MemberDetailComponent implements OnInit {
 
   onTabActivated(data: TabDirective) {
     this.activeTab = data;
-    if(this.activeTab.heading === 'Messages' && this.messages.length == 0 && this.member) {
-      this.loadMessages(this.member.username);
-    } 
+    if(this.activeTab.heading === 'Messages' && this.member) {
+      const user = this.accountService.currentUser();
+      if (!user) return;
+      this.messageService.createHubConnection(user, this.member.username);
+    } else {
+      this.messageService.stopHubConnection();
+    }
   }
 
-  loadMessages(username: string) {
-    this.messageService.getMessageThread(username).subscribe({
-      next: messages => {
-        this.messages = messages;
-      }
-    })
-  }
+  // loadMessages(username: string) {
+  //   this.messageService.getMessageThread(username).subscribe({
+  //     next: messages => {
+  //       this.messages = messages;
+  //     }
+  //   })
+  // }
 
-  onUpdateMessages(event: Message) {
-    this.messages.push(event);
-  }
+  // onUpdateMessages(event: Message) {
+  //   this.messages.push(event);
+  // }
 }
