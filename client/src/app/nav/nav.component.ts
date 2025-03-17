@@ -22,11 +22,8 @@ export class NavComponent {
 
   login() {
     this.accountService.login(this.model).subscribe({
-      next: _ => {
-        this.router.navigateByUrl('/members');
-      },
-      error: (error: HttpErrorResponse) => this.toastr.error(error.message)
-    })
+      next: _ => this.router.navigateByUrl('/members')
+    });
   }
 
   logout() {

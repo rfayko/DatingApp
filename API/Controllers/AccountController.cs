@@ -49,7 +49,7 @@ public class AccountController(
         
         if (user == null || user.UserName == null) return Unauthorized("Invalid Username");
 
-        if(!await userManager.CheckPasswordAsync(user, loginDto.Password)) return Unauthorized();
+        if(!await userManager.CheckPasswordAsync(user, loginDto.Password)) return Unauthorized("Invalid Password");
 
         return new UserDto
         {

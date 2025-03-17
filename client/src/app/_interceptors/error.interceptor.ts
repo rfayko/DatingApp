@@ -25,7 +25,7 @@ const toastr = inject (ToastrService);
             }
             break;
           case 401: 
-            toastr.error("Unauthorized", error.status);
+            toastr.error("Unauthorized", error.error);
             break;
           case 404: 
             router.navigateByUrl('/not-found');
