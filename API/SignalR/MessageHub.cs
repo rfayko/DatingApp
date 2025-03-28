@@ -8,11 +8,17 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace API.SignalR;
 
-public class MessageHub(IMessageRepository messageRepo, IUserRepository userRepo, IMapper mapper) : Hub
+public class MessageHub(
+  IMessageRepository messageRepo, 
+  IUserRepository userRepo, 
+  IMapper mapper,
+  IHubContext<PresenceHub> presenceHub) : Hub
 {
     public override async Task OnConnectedAsync()
     {
-        var httpContext = Context.GetHttpContext();
+        // API expectations for messaging are that the client will send a SignalR http request including the
+        // target user plus the token in the inital request query string. We use the Identity User to get logged in User.
+        var httpContext = Context.GetHttpContext(); //SignalR requests uses Http to initiate a connection with Server which then the server negotiates best protocol to use going forward. 
         var otherUser = httpContext?.Request.Query["user"][0];  // Query returns a StringValues object which is array-like
         var caller = Context.User?.GetUserName();
 
@@ -58,10 +64,22 @@ public class MessageHub(IMessageRepository messageRepo, IUserRepository userRepo
       var group = await messageRepo.GetMessageGroup(groupName);
       
       //If below true than recipient is in an active chat thread and can mark message as read
+      //Also, below indicates that the user is online with connections in both Message and Presence hubs.
+      //If false, user only has a connection in the presence Hub. 
       if (group != null && group.Connections.Any(c => c.UserName == recipient.UserName))
       {
         msg.DateRead = DateTime.UtcNow;
       }
+      else
+      {
+        var connections = await PresenceTracker.GetPresenceHubConnectionsForUser(recipient.UserName);
+        if(connections != null && connections.Any())
+        {
+          await presenceHub.Clients.Clients(connections)
+            .SendAsync("NewMessageReceived", new {username = sender.UserName, knownAs = sender.KnownAs});
+        }
+      }
+
 
       messageRepo.AddMessage(msg);
 
