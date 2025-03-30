@@ -41,10 +41,12 @@ export class MemberDetailComponent implements OnInit, OnDestroy {
       }
     });
 
+    // Below handles changes to root params changes. If change is for Message tab bounce the connection.
     this.route.paramMap.subscribe({
       next: _ => this.onRouteParamsChange()
     })
 
+    // Below handles change events to queryParams. Calls the selectTab method to navigate to the tab.
     this.route.queryParams.subscribe({
       next: params => {
         params['tab'] && this.selectTab(params['tab']);

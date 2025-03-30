@@ -57,6 +57,8 @@ public class PresenceTracker
     return Task.FromResult(onlineUsers);
   }
 
+  // Below gets the list of presence connections for a given user. 
+  // A user may possibly have presence connections from multiple devices.
   public static Task<List<string>> GetPresenceHubConnectionsForUser(string username)
   {
     List<string> connectionIds;
