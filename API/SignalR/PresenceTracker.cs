@@ -3,6 +3,8 @@ using Humanizer;
 
 namespace API.SignalR;
 
+// Approach here now is to only indicate online/offline when a user with no presence connections now connects/disconnects.
+// Addresses issue of user having multiple presence connections from different devices.
 public class PresenceTracker
 {
   private static readonly Dictionary<string, List<string>> OnLineUsers = [];
