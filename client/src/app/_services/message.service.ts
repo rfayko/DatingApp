@@ -6,6 +6,7 @@ import { Message } from '../_models/message';
 import { setPaginatedResponse, setPaginationHeaders } from './paginationHelper';
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
 import { User } from '../_models/user';
+import { Group } from '../_models/group';
 
 @Injectable({
   providedIn: 'root'
@@ -35,6 +36,25 @@ export class MessageService {
 
     this.hubConnection.on('NewMessage', message => {
       this.messageThread.update(messages => [...messages, message]);
+    });
+
+    // This is awkward logic in my view.
+    // I think the idea is that on a new connection to a group
+    // there is a SignalR update from the server providing the 
+    // updated group. If the message recipient (otherUsername) is online in the thread
+    // and has any messages not read, mark them read here instead of from server so the 
+    // sender sees them as read.
+    this.hubConnection.on("UpdatedGroup", (group: Group) => {
+      if (group.connections.some(c => c.username === otherUsername)) {
+        this.messageThread.update(messages => {
+          messages.forEach(m => {
+            if (!m.dateRead) {
+              m.dateRead = new Date(Date.now());
+            }
+          })
+          return messages;
+        })
+      }
     });
   }
 

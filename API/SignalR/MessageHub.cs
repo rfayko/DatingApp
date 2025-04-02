@@ -1,9 +1,11 @@
+using System.Formats.Asn1;
 using API.DTOs;
 using API.Entities;
 using API.Externsions;
 using API.Interfaces;
 using AutoMapper;
 using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
 namespace API.SignalR;
@@ -25,17 +27,23 @@ public class MessageHub(
         if( string.IsNullOrEmpty(caller) || string.IsNullOrEmpty(otherUser)) throw new HubException("Group Error: Caller and Other User cannot be null");
         var groupName = GetGroupName(caller, otherUser);
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-        await AddToGroup(groupName);
+        var group = await AddToGroup(groupName);
+
+        // Below is to allow client to interrogate a group to see if the other user is in the group
+        // before marking message as read.
+        await Clients.Group(groupName).SendAsync("UpdatedGroup", group);
 
         var messages = await messageRepo.GetMessageThread(caller, otherUser);
 
-        await Clients.Group(groupName).SendAsync("ReceivedMessageThread", messages);
+        // Now sending thread to caller instead of group.
+        await Clients.Caller.SendAsync("ReceivedMessageThread", messages);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         //When disconnecting from Message Hub group is auto removed from Groups.
-        await RemoveFromMessageGroup();
+        var group = await RemoveConnectionFromMessageGroup();
+        await Clients.Group(group.Name).SendAsync("UpdatedGroup", group);
         await base.OnDisconnectedAsync(exception);
     }
 
@@ -66,7 +74,7 @@ public class MessageHub(
       //If below true than recipient is in an active chat thread and can mark message as read
       //Also, below indicates that the user is online with connections in both Message and Presence hubs.
       //If false, user only has a connection in the presence Hub. 
-      if (group != null && group.Connections.Any(c => c.UserName == recipient.UserName))
+      if (group != null && group.Connections.Any(c => c.Username == recipient.UserName))
       {
         msg.DateRead = DateTime.UtcNow;
       }
@@ -91,11 +99,11 @@ public class MessageHub(
       return;
     }
 
-    private async Task<bool> AddToGroup(string groupName)
+    private async Task<Group> AddToGroup(string groupName)
     {
       var username = Context.User?.GetUserName() ?? throw new HubException("Cannot get username");
       var group = await messageRepo.GetMessageGroup(groupName);
-      var connection = new Connection{ConnectionId = Context.ConnectionId, UserName = username};
+      var connection = new Connection{ConnectionId = Context.ConnectionId, Username = username};
 
       if (group == null)
       {
@@ -105,17 +113,22 @@ public class MessageHub(
 
       group.Connections.Add(connection);
 
-      return await messageRepo.SaveAllAsync();
+      if(await messageRepo.SaveAllAsync()) return group;
+
+      throw new HubException("Unable to add connection to group.");
     }
 
-    private async Task RemoveFromMessageGroup()
+    private async Task<Group> RemoveConnectionFromMessageGroup()
     {
-      var connection = await messageRepo.GetConnection(Context.ConnectionId);
-      if (connection != null)
+      var group = await messageRepo.GetGroupForConnection(Context.ConnectionId) ?? throw new HubException("Failed to obtain group from connection.");
+      var connection = group?.Connections.FirstOrDefault(c => c.ConnectionId == Context.ConnectionId);
+      if (connection != null && group != null)
       {
         messageRepo.RemoveConnection(connection);
-        await messageRepo.SaveAllAsync();
+        if (await messageRepo.SaveAllAsync()) return group;
       }
+
+      throw new HubException("Failed to remove connection from group.");
     }
 
     private string GetGroupName(string caller, string other) 

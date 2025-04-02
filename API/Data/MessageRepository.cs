@@ -64,8 +64,6 @@ public class MessageRepository(DataContext context, IMapper mapper) : IMessageRe
     public async Task<IEnumerable<MessageDto>> GetMessageThread(string currentUserName, string recipientUserName)
     {
         var messages = await context.Messages
-                .Include(x => x.Sender).ThenInclude(x => x.Photos)
-                .Include(x => x.Recipient).ThenInclude(x => x.Photos)
                 .Where(
                     x => x.RecipientUserName == currentUserName 
                     && x.SenderUserName == recipientUserName
@@ -75,17 +73,18 @@ public class MessageRepository(DataContext context, IMapper mapper) : IMessageRe
                     && x.RecipientUserName == recipientUserName 
                     && !x.SenderDeleted)
                 .OrderBy(x => x.MessageSent)
+                .ProjectTo<MessageDto>(mapper.ConfigurationProvider)
                 .ToListAsync();
 
             //Get unread messages and mark as read (set DateRead = Now)
-            var unread = messages.Where(x => x.DateRead == null && x.RecipientUserName == currentUserName).ToList();
+            var unread = messages.Where(x => x.DateRead == null && x.RecipientUsername == currentUserName).ToList();
             if(unread.Any())
             {
                 unread.ForEach(um => um.DateRead = DateTime.UtcNow);
                 await context.SaveChangesAsync();
             }
 
-        return mapper.Map<IEnumerable<MessageDto>>(messages);
+        return messages;
     }
 
     public void RemoveConnection(Connection connection)
@@ -96,5 +95,13 @@ public class MessageRepository(DataContext context, IMapper mapper) : IMessageRe
     public async Task<bool> SaveAllAsync()
     {
         return await context.SaveChangesAsync() > 0;
+    }
+
+    public async Task<Group?> GetGroupForConnection(string connectionId)
+    {
+        return await context.Groups
+            .Include(g => g.Connections)
+            .Where(g => g.Connections.Any(c => c.ConnectionId == connectionId))
+            .FirstOrDefaultAsync();
     }
 }
