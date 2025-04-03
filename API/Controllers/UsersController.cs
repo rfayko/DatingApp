@@ -13,13 +13,13 @@ using SQLitePCL;
 namespace API.Controllers;
 
 [Authorize]
-public class UsersController(IUserRepository userRepo, IMapper mapper, IPhotoService photoService) : BaseApiController
+public class UsersController(IUnitOfWork uow, IMapper mapper, IPhotoService photoService) : BaseApiController
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers([FromQuery] UserParams userParams)
     {
         userParams.CurrentUserName = User.GetUserName();
-        var users = await userRepo.GetMembersAsync(userParams);
+        var users = await uow.UserRepository.GetMembersAsync(userParams);
         Response.AddPaginationHeader(users);
 
         return Ok(users);
@@ -28,7 +28,7 @@ public class UsersController(IUserRepository userRepo, IMapper mapper, IPhotoSer
     [HttpGet("{id:int}")] // /api/users/[id]
     public async Task<ActionResult<AppUser>> GetUserById(int id)
     {
-        var user = await userRepo.GetUserByIdAsync(id);
+        var user = await uow.UserRepository.GetUserByIdAsync(id);
 
         if(user == null) return NotFound();
 
@@ -39,7 +39,7 @@ public class UsersController(IUserRepository userRepo, IMapper mapper, IPhotoSer
     [HttpGet("{username}")] // /api/users/[id]
     public async Task<ActionResult<MemberDto>> GetUser(string username)
     {
-        var user = await userRepo.GetMemberAsync(username);
+        var user = await uow.UserRepository.GetMemberAsync(username);
 
         if(user == null) return NotFound();
 
@@ -49,11 +49,11 @@ public class UsersController(IUserRepository userRepo, IMapper mapper, IPhotoSer
     [HttpPut]
     public async Task<ActionResult> UpdateUser(MemberUpdateDto memberUpdateDto)
     {
-        var user = await userRepo.GetUserByUsernameAsync(User.GetUserName());
+        var user = await uow.UserRepository.GetUserByUsernameAsync(User.GetUserName());
       
         mapper.Map(memberUpdateDto, user);
 
-        if (await userRepo.SaveAllAsync()) return NoContent();
+        if (await uow.Complete()) return NoContent();
 
         return BadRequest("Failed to update user.");
     }
@@ -61,7 +61,7 @@ public class UsersController(IUserRepository userRepo, IMapper mapper, IPhotoSer
     [HttpPost("add-photo")]
     public async Task<ActionResult<PhotoDto>> AddPhoto(IFormFile file)
     {
-        var user = await userRepo.GetUserByUsernameAsync(User.GetUserName());
+        var user = await uow.UserRepository.GetUserByUsernameAsync(User.GetUserName());
 
         if (user == null) return BadRequest("Cannot update user");
 
@@ -77,7 +77,7 @@ public class UsersController(IUserRepository userRepo, IMapper mapper, IPhotoSer
 
         user.Photos.Add(photo);
 
-        if (await userRepo.SaveAllAsync()) 
+        if (await uow.Complete()) 
             return CreatedAtAction(nameof(GetUser), new {username = user.UserName}, mapper.Map<PhotoDto>(photo));
 
         return BadRequest("Problem adding Photo");
@@ -87,7 +87,7 @@ public class UsersController(IUserRepository userRepo, IMapper mapper, IPhotoSer
     [HttpPut("set-main-photo/{photoId:int}")]
     public async Task<ActionResult> SetMainPhoto(int photoId)
     {
-        var user = await userRepo.GetUserByUsernameAsync(User.GetUserName());
+        var user = await uow.UserRepository.GetUserByUsernameAsync(User.GetUserName());
       
         if (user == null) return BadRequest("Could not find user");
 
@@ -101,7 +101,7 @@ public class UsersController(IUserRepository userRepo, IMapper mapper, IPhotoSer
 
         photo.IsMain = true;
 
-        if (await userRepo.SaveAllAsync()) return NoContent();
+        if (await uow.Complete()) return NoContent();
 
         return BadRequest("Failed to update main photo.");
     }
@@ -109,7 +109,7 @@ public class UsersController(IUserRepository userRepo, IMapper mapper, IPhotoSer
     [HttpDelete("delete-photo/{photoId:int}")]
     public async Task<ActionResult> DeletePhoto(int photoId)
     {
-        var user = await userRepo.GetUserByUsernameAsync(User.GetUserName());
+        var user = await uow.UserRepository.GetUserByUsernameAsync(User.GetUserName());
       
         if (user == null) return BadRequest("Could not find user");
 
@@ -125,7 +125,7 @@ public class UsersController(IUserRepository userRepo, IMapper mapper, IPhotoSer
 
         var mainPhoto = user.Photos.Remove(photo);
 
-        if (await userRepo.SaveAllAsync()) return Ok();
+        if (await uow.Complete()) return Ok();
 
         return BadRequest("Failed to delete photo.");
     }

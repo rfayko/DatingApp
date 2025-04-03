@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers;
 
 [Authorize]
-public class MessagesController(IMessageRepository messageRepo, IUserRepository userRepo, IMapper mapper) : BaseApiController
+public class MessagesController(IUnitOfWork uow, IMapper mapper) : BaseApiController
 {
   [HttpPost]
   public async Task<ActionResult<MessageDto>> CreateMessage(CreateMessageDto createMessageDto)
@@ -21,8 +21,8 @@ public class MessagesController(IMessageRepository messageRepo, IUserRepository 
     if (userName == createMessageDto.RecipientUserName.ToLower()) 
       return BadRequest("Can't send a message to yourself.");
 
-    var sender = await userRepo.GetUserByUsernameAsync(userName);
-    var recipient = await userRepo.GetUserByUsernameAsync(createMessageDto.RecipientUserName);
+    var sender = await uow.UserRepository.GetUserByUsernameAsync(userName);
+    var recipient = await uow.UserRepository.GetUserByUsernameAsync(createMessageDto.RecipientUserName);
 
     if (recipient == null || sender == null || sender.UserName == null || recipient.UserName == null) return BadRequest("Cant' send message at this time.");
 
@@ -30,14 +30,14 @@ public class MessagesController(IMessageRepository messageRepo, IUserRepository 
       {
         Sender = sender,
         Recipient = recipient,
-        SenderUserName = sender.UserName,
-        RecipientUserName = recipient.UserName,
+        SenderUsername = sender.UserName,
+        RecipientUsername = recipient.UserName,
         Content = createMessageDto.Content
       };
 
-    messageRepo.AddMessage(msg);
+    uow.MessageRepository.AddMessage(msg);
 
-    if (await messageRepo.SaveAllAsync()) return Ok(mapper.Map<MessageDto>(msg));
+    if (await uow.Complete()) return Ok(mapper.Map<MessageDto>(msg));
 
     return BadRequest("Failed to save message");
   }
@@ -46,7 +46,7 @@ public class MessagesController(IMessageRepository messageRepo, IUserRepository 
   public async Task<ActionResult<IEnumerable<MessageDto>>> GetMessagesForUser([FromQuery]MessageParams messageParams)
   {
     messageParams.Username = User.GetUserName();
-    var messages = await messageRepo.GetMessagesForUser(messageParams);
+    var messages = await uow.MessageRepository.GetMessagesForUser(messageParams);
 
     Response.AddPaginationHeader(messages);
 
@@ -57,27 +57,27 @@ public class MessagesController(IMessageRepository messageRepo, IUserRepository 
   public async Task<ActionResult<IEnumerable<MessageDto>>> GetMessageThread(string username)
   {
     var currentUserName = User.GetUserName();
-    return Ok(await messageRepo.GetMessageThread(currentUserName, username));
+    return Ok(await uow.MessageRepository.GetMessageThread(currentUserName, username));
   }
 
   [HttpDelete("{id:int}")]
   public async Task<ActionResult> DeleteMessage(int id)
   {
     var currentUserName = User.GetUserName();
-    var msg = await messageRepo.GetMessage(id);
+    var msg = await uow.MessageRepository.GetMessage(id);
     if(msg == null) return BadRequest("Could not mark message for deletion.");
 
-    if(msg.SenderUserName != currentUserName || msg.RecipientUserName != currentUserName) Forbid();
+    if(msg.SenderUsername != currentUserName || msg.RecipientUsername != currentUserName) Forbid();
 
-    if (msg.SenderUserName == currentUserName) msg.SenderDeleted = true;
-    if (msg.RecipientUserName == currentUserName) msg.RecipientDeleted = true;
+    if (msg.SenderUsername == currentUserName) msg.SenderDeleted = true;
+    if (msg.RecipientUsername == currentUserName) msg.RecipientDeleted = true;
 
     if (msg is {SenderDeleted: true, RecipientDeleted: true})
     {
-      messageRepo.DeleteMessage(msg);
+      uow.MessageRepository.DeleteMessage(msg);
     }
 
-    if (await messageRepo.SaveAllAsync()) 
+    if (await uow.Complete()) 
     {
       return Ok();
     }

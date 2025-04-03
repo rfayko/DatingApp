@@ -1,4 +1,5 @@
 using System.Formats.Asn1;
+using API.Data;
 using API.DTOs;
 using API.Entities;
 using API.Externsions;
@@ -14,18 +15,19 @@ public class MessageHub(
   IMessageRepository messageRepo, 
   IUserRepository userRepo, 
   IMapper mapper,
-  IHubContext<PresenceHub> presenceHub) : Hub
+  IHubContext<PresenceHub> presenceHub,
+  IUnitOfWork uow) : Hub
 {
     public override async Task OnConnectedAsync()
     {
         // API expectations for messaging are that the client will send a SignalR http request including the
         // target user plus the token in the inital request query string. We use the Identity User to get logged in User.
         var httpContext = Context.GetHttpContext(); //SignalR requests uses Http to initiate a connection with Server which then the server negotiates best protocol to use going forward. 
-        var otherUser = httpContext?.Request.Query["user"][0];  // Query returns a StringValues object which is array-like
+        var chatPartnerUsername = httpContext?.Request.Query["user"][0];  // Query returns a StringValues object which is array-like
         var caller = Context.User?.GetUserName();
 
-        if( string.IsNullOrEmpty(caller) || string.IsNullOrEmpty(otherUser)) throw new HubException("Group Error: Caller and Other User cannot be null");
-        var groupName = GetGroupName(caller, otherUser);
+        if( string.IsNullOrEmpty(caller) || string.IsNullOrEmpty(chatPartnerUsername)) throw new HubException("Group Error: Caller and Other User cannot be null");
+        var groupName = GetGroupName(caller, chatPartnerUsername);
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         var group = await AddToGroup(groupName);
 
@@ -33,7 +35,8 @@ public class MessageHub(
         // before marking message as read.
         await Clients.Group(groupName).SendAsync("UpdatedGroup", group);
 
-        var messages = await messageRepo.GetMessageThread(caller, otherUser);
+        var messages = await messageRepo.GetMessageThread(caller, chatPartnerUsername);
+        if(uow.HasChanges()) await uow.Complete();  // GetMessageThread may update some messages. If so, persist them here.
 
         // Now sending thread to caller instead of group.
         await Clients.Caller.SendAsync("ReceivedMessageThread", messages);
@@ -63,8 +66,8 @@ public class MessageHub(
         {
           Sender = sender,
           Recipient = recipient,
-          SenderUserName = sender.UserName,
-          RecipientUserName = recipient.UserName,
+          SenderUsername = sender.UserName,
+          RecipientUsername = recipient.UserName,
           Content = createMessageDto.Content
         };
 
@@ -88,10 +91,9 @@ public class MessageHub(
         }
       }
 
-
       messageRepo.AddMessage(msg);
 
-      if (await messageRepo.SaveAllAsync())
+      if (await uow.Complete())
       {
         await Clients.Group(groupName).SendAsync("NewMessage", mapper.Map<MessageDto>(msg));
       } 
@@ -113,7 +115,7 @@ public class MessageHub(
 
       group.Connections.Add(connection);
 
-      if(await messageRepo.SaveAllAsync()) return group;
+      if(await uow.Complete()) return group;
 
       throw new HubException("Unable to add connection to group.");
     }
@@ -125,7 +127,7 @@ public class MessageHub(
       if (connection != null && group != null)
       {
         messageRepo.RemoveConnection(connection);
-        if (await messageRepo.SaveAllAsync()) return group;
+        if (await uow.Complete()) return group;
       }
 
       throw new HubException("Failed to remove connection from group.");

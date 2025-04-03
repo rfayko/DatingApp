@@ -61,40 +61,34 @@ public class MessageRepository(DataContext context, IMapper mapper) : IMessageRe
         return await PagedList<MessageDto>.CreateAsync(messagesQuery, messageParams.PageNumber, messageParams.PageSize);
     }
 
-    public async Task<IEnumerable<MessageDto>> GetMessageThread(string currentUserName, string recipientUserName)
+    public async Task<IEnumerable<MessageDto>> GetMessageThread(string currentUserName, string chatPartnerUserName)
     {
-        var messages = await context.Messages
+        var query = context.Messages
                 .Where(
-                    x => x.RecipientUserName == currentUserName 
-                    && x.SenderUserName == recipientUserName
+                    x => x.RecipientUsername == currentUserName 
+                    && x.SenderUsername == chatPartnerUserName
                     && !x.RecipientDeleted 
                     ||
-                    x.SenderUserName == currentUserName 
-                    && x.RecipientUserName == recipientUserName 
+                    x.SenderUsername == currentUserName 
+                    && x.RecipientUsername == chatPartnerUserName 
                     && !x.SenderDeleted)
                 .OrderBy(x => x.MessageSent)
-                .ProjectTo<MessageDto>(mapper.ConfigurationProvider)
-                .ToListAsync();
+                .AsQueryable();
 
             //Get unread messages and mark as read (set DateRead = Now)
-            var unread = messages.Where(x => x.DateRead == null && x.RecipientUsername == currentUserName).ToList();
+            var unread = query.Where(x => x.DateRead == null 
+                && x.RecipientUsername == currentUserName).ToList();
             if(unread.Any())
             {
                 unread.ForEach(um => um.DateRead = DateTime.UtcNow);
-                await context.SaveChangesAsync();
             }
 
-        return messages;
+        return await query.ProjectTo<MessageDto>(mapper.ConfigurationProvider).ToListAsync();
     }
 
     public void RemoveConnection(Connection connection)
     {
         context.Connections.Remove(connection);
-    }
-
-    public async Task<bool> SaveAllAsync()
-    {
-        return await context.SaveChangesAsync() > 0;
     }
 
     public async Task<Group?> GetGroupForConnection(string connectionId)

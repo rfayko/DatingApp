@@ -20,9 +20,9 @@ export class MessageService {
   messageThread = signal<Message[]>([]);
 
   // Hub services
-  createHubConnection(user: User, otherUsername: string) {
+  createHubConnection(user: User, chatPartnerUsername: string) {
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl(this.hubUrl + 'message?user=' + otherUsername, {
+      .withUrl(this.hubUrl + 'message?user=' + chatPartnerUsername, {
         accessTokenFactory: () => user.token
       })
       .withAutomaticReconnect()
@@ -45,7 +45,7 @@ export class MessageService {
     // and has any messages not read, mark them read here instead of from server so the 
     // sender sees them as read.
     this.hubConnection.on("UpdatedGroup", (group: Group) => {
-      if (group.connections.some(c => c.username === otherUsername)) {
+      if (group.connections.some(c => c.username === chatPartnerUsername)) {
         this.messageThread.update(messages => {
           messages.forEach(m => {
             if (!m.dateRead) {
