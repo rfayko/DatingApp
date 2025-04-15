@@ -1,3 +1,70 @@
 .nv-file-over {
   border: dotted 3px Red
 }
+
+.disabled-image {
+  filter: grayscale(100%); /* Or filter: grayscale(1); */
+  /* Optional: Make it slightly transparent for a more faded 'disabled' look */
+  opacity: 0.6; 
+  /* Optional: Prevent interaction like clicks */
+  pointer-events: none; 
+}
+/* The container needs relative positioning */
+.image-container {
+  position: relative;
+  display: inline-block; /* Or block, depending on layout needs */
+  /* Optional: Set width/max-width if needed */
+  /* width: 100%; */
+  /* max-width: 600px; */
+}
+
+/* Style the image */
+.image-container img {
+  display: block; /* Removes bottom space under image */
+  width: 100%;    /* Make image fill container width */
+  height: auto;   /* Maintain aspect ratio */
+}
+
+/* Style the overlay text */
+.overlay-text {
+  position: absolute; /* Position absolutely relative to the container */
+  top: 50%;          /* Position the top edge of the text element at the middle */
+  left: 50%;         /* Position the left edge of the text element at the middle */
+  transform: translate(-50%, -50%); /* Center the text element precisely */
+
+  /* --- Styling for Appearance (Customize as needed) --- */
+  color: white;         /* Text color */
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+  padding: 10px 20px;   /* Spacing around the text */
+  border-radius: 5px;   /* Rounded corners */
+  font-size: .9em;     /* Text size */
+  font-weight: bold;
+  text-align: center;   /* Center text horizontally if it wraps */
+  /* Add any other text styles like font-family, etc. */
+}
+
+/* --- Optional: Different Positions --- */
+
+/* Example: Text at the bottom left */
+/*
+.overlay-text-bottom-left {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 5px 10px;
+}
+*/
+
+/* Example: Text at the top right */
+/*
+.overlay-text-top-right {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 5px 10px;
+}
+*/

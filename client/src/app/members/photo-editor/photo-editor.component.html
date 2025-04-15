@@ -1,19 +1,27 @@
 <div class="row">
   @for (photo of member().photos; track photo.id) {
     <div class="col-2">
-      <img src="{{photo.url}}" alt="photo of user" class="img-thumbnail mb-1">
-      <div class="text-center">
-        <button 
-            class="btn btn-sm me-1"
-            [disabled]="photo.isMain"
-            (click)="setMainPhoto(photo)"
-            [ngClass]="photo.isMain ? 'btn-success active' : 'btn-outline-success'">Main</button>
-        <button 
-            class="btn btn-danger" 
-            (click)="deletePhoto(photo)"
-            [disabled]="photo.isMain">
-            <i class="fa fa-trash"></i>
-        </button>
+      <div class="image-container">
+        <img src="{{photo.url}}" alt="photo of user" class="img-thumbnail mb-1">
+        <div class="text-center">
+            @if (photo.isApproved) {
+                <button 
+                    class="btn btn-sm me-1"
+                    [disabled]="photo.isMain"
+                    (click)="setMainPhoto(photo)"
+                    [ngClass]="photo.isMain ? 'btn-success active' : 'btn-outline-success'">Main</button>
+            } @else {
+                <div class="overlay-text">
+                    Awaiting Approval
+                </div>
+            }
+            <button 
+                class="btn btn-danger" 
+                (click)="deletePhoto(photo)"
+                [disabled]="photo.isMain">
+                <i class="fa fa-trash"></i>
+            </button>
+        </div>
       </div>
     </div>
   }

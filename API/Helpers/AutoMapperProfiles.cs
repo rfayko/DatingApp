@@ -25,5 +25,8 @@ public class AutoMapperProfiles : Profile
     // Below handles situations where dates are not formatted as Utc such as when returning from SQLite DB.
     CreateMap<DateTime, DateTime>().ConvertUsing(d => DateTime.SpecifyKind(d, DateTimeKind.Utc));
     CreateMap<DateTime?, DateTime?>().ConvertUsing(d => d.HasValue ? DateTime.SpecifyKind(d.Value, DateTimeKind.Utc) : null); //To handle optional date fields.
+
+    CreateMap<Photo, PhotoForApprovalDto>()
+      .ForMember(d => d.Username, o => o.MapFrom(u => u.AppUser.UserName));
   }
 }

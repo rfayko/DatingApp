@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using API.DTOs;
 using API.Entities;
 using API.Helpers;
@@ -64,14 +65,14 @@ public class UserRepository(DataContext context, IMapper mapper) : IUserReposito
           .ToListAsync();
     }
 
-    // Replaced with IUnitOfWork
-    // public async Task<bool> SaveAllAsync()
-    // {
-    //     return await context.SaveChangesAsync() > 0;
-    // }
-
     public void Update(AppUser user)
     {
         context.Entry(user).State = EntityState.Modified;
+    }
+
+    public async Task<AppUser?> GetUserByPhotoId(int id)
+    {
+        var users = await GetUsersAsync();
+        return users.FirstOrDefault(u => u.Photos.Any(p => p.Id == id));
     }
 }

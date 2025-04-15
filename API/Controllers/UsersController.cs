@@ -72,7 +72,7 @@ public class UsersController(IUnitOfWork uow, IMapper mapper, IPhotoService phot
         var photo = new Photo{
             Url = result.SecureUrl.AbsoluteUri,
             PublicId = result.PublicId,
-            IsMain = user.Photos.Count == 0
+            IsMain = false    // Added photos can't be main until approved.
         };
 
         user.Photos.Add(photo);

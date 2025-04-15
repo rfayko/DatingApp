@@ -61,11 +61,7 @@ export class MembersService {
   }
 
   updateMember(member: Member) {
-    return this.http.put(this.baseUrl + 'users', member).pipe(
-      // tap(() => {
-      //   this.members.update(members => members.map(m => m.username === member.username ? member : m));
-      // })
-    );
+    return this.http.put(this.baseUrl + 'users', member);
   }
 
   deletePhoto(photo: Photo) {
@@ -73,15 +69,6 @@ export class MembersService {
   }
 
   setMainPhoto(photo: Photo) {
-    return this.http.put(this.baseUrl + "users/set-main-photo/" + photo.id, {}).pipe(
-      // tap(() => {
-      //   this.members.update(members => members.map(m => {
-      //     if (m.photos.includes(photo)) {
-      //       m.photoUrl = photo.url;       //member.photoUrl is the MAIN photo url
-      //     }
-      //     return m;
-      //   }))
-      // })
-    );
+    return this.http.put(this.baseUrl + "users/set-main-photo/" + photo.id, {});
   }
 }
