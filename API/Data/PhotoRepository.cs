@@ -12,7 +12,9 @@ public class PhotoRepository(DataContext context, IMapper mapper) : IPhotoReposi
 {
     public async Task<Photo?> GetPhotoById(int id)
     {
-        return await context.Photos.FirstOrDefaultAsync(p => p.Id == id);      
+         return await context.Photos
+                        .IgnoreQueryFilters()
+                        .SingleOrDefaultAsync(x => x.Id == id);      
     }
 
     public async Task<IEnumerable<PhotoForApprovalDto>?> GetUnapprovedPhotos()
@@ -20,6 +22,7 @@ public class PhotoRepository(DataContext context, IMapper mapper) : IPhotoReposi
         return await context.Photos
             .Where(p => !p.IsApproved)
             .ProjectTo<PhotoForApprovalDto>(mapper.ConfigurationProvider)
+            .IgnoreQueryFilters()
             .ToListAsync();
     }
 

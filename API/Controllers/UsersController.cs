@@ -39,7 +39,8 @@ public class UsersController(IUnitOfWork uow, IMapper mapper, IPhotoService phot
     [HttpGet("{username}")] // /api/users/[id]
     public async Task<ActionResult<MemberDto>> GetUser(string username)
     {
-        var user = await uow.UserRepository.GetMemberAsync(username);
+        var currentUsername = User.GetUserName();
+        var user = await uow.UserRepository.GetMemberAsync(username, isCurrentUser: currentUsername == username);
 
         if(user == null) return NotFound();
 
@@ -113,9 +114,9 @@ public class UsersController(IUnitOfWork uow, IMapper mapper, IPhotoService phot
       
         if (user == null) return BadRequest("Could not find user");
 
-        var photo = user.Photos.FirstOrDefault(p => p.Id == photoId);
+        var photo = await uow.PhotoRepository.GetPhotoById(photoId);
 
-        if (photo == null || photo.IsMain) return BadRequest("Cannot delete Main Photo.");
+        if (photo == null || photo.IsMain) return BadRequest("Cannot delete this Photo.");
 
         if (photo.PublicId != null)
         {

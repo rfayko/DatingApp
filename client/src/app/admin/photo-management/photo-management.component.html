@@ -1,1 +1,20 @@
-<p>photo-management works!</p>
+@if (photos.length == 0) {
+    <h1>No Photos to Approve At This Time.</h1>
+} @else {
+    <div class="row">
+        @for (photo of photos; track photo.id) {
+            <div class="col-2">
+                <h2>{{photo.username}}</h2>
+                <div class="image-container">
+                    <img src="{{photo.url}}" alt="photo of user" class="img-thumbnail mb-1">
+                    <div class="text-center">
+                    <button class="btn btn-sm me-1 btn-success active" (click)="approvePhoto(photo.id)">Approve</button>
+                    <button class="btn btn-sm me-1 btn-danger" (click)="rejectPhoto(photo.id)">Reject</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+  

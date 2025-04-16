@@ -6,6 +6,7 @@ using API.DTOs;
 using API.Entities;
 using API.Externsions;
 using API.Interfaces;
+using API.Services;
 using AutoMapper;
 using CloudinaryDotNet.Core;
 using Microsoft.AspNetCore.Authorization;
@@ -13,7 +14,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-public class AdminController(UserManager<AppUser> userManager, IUnitOfWork uow) : BaseApiController
+public class AdminController(UserManager<AppUser> userManager, IUnitOfWork uow, IPhotoService photoService) : BaseApiController
 {
   [Authorize(Policy = "RequireAdminRole")]
   [HttpGet("users-with-roles")]
@@ -80,8 +81,9 @@ public class AdminController(UserManager<AppUser> userManager, IUnitOfWork uow) 
 
     // Get the User and if User does not have Main photo, update this photo to Main
     var user = await GetAppUserByPhotoId(id);
-    if (user != null && !user.Photos.Any(p => p.IsMain))
-      photoForApproval.IsMain = true;
+    if (user == null) return BadRequest("Can't get user from DB");
+    
+    if(!user.Photos.Any(p => p.IsMain)) photoForApproval.IsMain = true;
 
     if (await uow.Complete())
         return Ok();
@@ -96,11 +98,23 @@ public class AdminController(UserManager<AppUser> userManager, IUnitOfWork uow) 
     var photo = await uow.PhotoRepository.GetPhotoById(id);
     if (photo == null) return NotFound("Photo not found");
 
-    uow.PhotoRepository.RemovePhoto(photo);
+    if(photo.PublicId != null)
+    {
+      var result = await photoService.DeletePhotoAsync(photo.PublicId);
+
+      if (result.Result == "ok")
+      {
+        uow.PhotoRepository.RemovePhoto(photo);
+      }
+    }
+    else
+    {
+      uow.PhotoRepository.RemovePhoto(photo);
+    }
 
     if(await uow.Complete()) return Ok();
 
-    return BadRequest("Failed to remove Photo");
+    return BadRequest("Failed to remove Photo from repository.");
 
   }
 

@@ -28,7 +28,7 @@
 /* Style the overlay text */
 .overlay-text {
   position: absolute; /* Position absolutely relative to the container */
-  top: 50%;          /* Position the top edge of the text element at the middle */
+  top: 40%;          /* Position the top edge of the text element at the middle */
   left: 50%;         /* Position the left edge of the text element at the middle */
   transform: translate(-50%, -50%); /* Center the text element precisely */
 
@@ -43,28 +43,27 @@
   /* Add any other text styles like font-family, etc. */
 }
 
-/* --- Optional: Different Positions --- */
 
-/* Example: Text at the bottom left */
-/*
-.overlay-text-bottom-left {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  color: white;
-  background-color: rgba(0, 0, 0, 0.5);
-  padding: 5px 10px;
-}
-*/
+.not-approved {
+  opacity: 0.2;
+ }
 
-/* Example: Text at the top right */
-/*
-.overlay-text-top-right {
+.img-wrapper {
+  position: relative;
+ }
+
+
+.img-text {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  color: white;
-  background-color: rgba(0, 0, 0, 0.5);
-  padding: 5px 10px;
-}
-*/
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  bottom: 30%;
+  text-align: center;
+  word-wrap: break-word;
+  white-space: normal;
+  width: 100%;
+  padding: 0 10px;
+  box-sizing: border-box;
+ }
