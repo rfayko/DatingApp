@@ -32,6 +32,8 @@ app.MapControllers();
 app.MapHub<PresenceHub>("hubs/presence");
 app.MapHub<MessageHub>("hubs/message");
 
+app.MapFallbackToController("Index", "Fallback");
+
 //Seed Users into DB
 using var scope = app.Services.CreateScope();
 var services = scope.ServiceProvider;
