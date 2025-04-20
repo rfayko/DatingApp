@@ -22,6 +22,10 @@ app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowCredentials()
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+//To serve Ng Files
+app.UseDefaultFiles();
+app.UseStaticFiles();
     
 app.MapControllers();
 
