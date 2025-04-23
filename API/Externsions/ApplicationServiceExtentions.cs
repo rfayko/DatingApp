@@ -13,10 +13,23 @@ public static class ApplicationServiceExtentions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration config)
     {
         services.AddControllers();
+        var connectionString = "Sqlite";
+        var useSqlServer = config.GetValue<bool>("UseSqlServer");
+        var useRemoteSqlServer = config.GetValue<bool>("UseRemoteSqlServer");
+        
+        if(useSqlServer)
+        {
+            if (useRemoteSqlServer)
+                connectionString = "AzureSqlServer";
+            else
+                connectionString = "LocalSqlServer";
+        }
+        
         services.AddDbContext<DataContext>(opt =>
         {
-            opt.UseSqlite(config.GetConnectionString("DefaultConnection"));
+            opt.UseSqlServer(config.GetConnectionString(connectionString));
         });
+        
         services.AddCors();
         
         services.AddScoped<ITokenService, TokenService>();
